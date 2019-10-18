@@ -13,7 +13,7 @@ To install harmony for Python, run `pip install harmony-device`
 Creating your first harmony device is extremely simple:
 ```
 #Import the HarmonyDevice class
-from harmonydevice import HarmonyDevice
+from harmony_device import HarmonyDevice
 
 #Create an instance of the class
 device = HarmonyDevice()
