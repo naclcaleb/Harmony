@@ -1,0 +1,65 @@
+# Welcome to Harmony!
+With all the different IoT providers out there, it's not easy for developers to get them to talk to each other. That's what Harmony is for.
+
+## About
+Harmony is a protocol for how IoT devices should be defined, and how they should communicate with each other.
+
+Each Harmony device defines a list of "getters" and "setters", which are used to pass information to and from devices. They also have the ability to emit and listen to events from other Harmony devices.
+
+## Installation
+To install harmony for Python, run `pip install harmony-device`
+
+## Using harmony
+Creating your first harmony device is extremely simple:
+```
+#Import the HarmonyDevice class
+from harmony_device import HarmonyDevice
+
+#Create an instance of the class
+device = HarmonyDevice()
+
+
+#Define your getter functions (the params parameter passes any extra parameters from the request to your function)
+def message_getter(params):
+  #Return the getter data
+  with open("./message.txt", "r") as file:
+      message = file.read()
+  return message
+
+#Define you setter functions
+def message_setter(value, params):
+  #Set the message
+  with open('./message.txt', 'w') as file:
+      file.write(value)
+
+  #Return
+  return ""
+
+#Now, add the getters and setters to the device
+device.add_getters([
+  {
+    "attribute": "message",
+    "callback": message_getter
+  }
+])
+
+device.add_setters([
+  {
+    "attribute": "message",
+    "callback": message_setter
+  }
+])
+
+#Now, simply call the run method to start the harmony device server!
+device.run(port=5000)
+```
+
+As of right now, it is not possible to define attributes straight in the Python program as variables, hence the creation of a file for the message.
+However, in many cases that is unnecessary, because in general the information is stored in the program of the IoT device itself.
+
+
+This system is not meant to magically work with every IoT device. It's an abstraction layer that allows us to write code that can *potentially* work with many IoT devices - so long as they have their getters and setters defined correctly.
+
+
+## Supported Languages
+Currently, Python is the only supported language, but I'm hoping to add C++, Java, and NodeJS as well.
