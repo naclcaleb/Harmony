@@ -8,8 +8,7 @@ class HarmonyDevice:
     id = socket.gethostbyname(socket.gethostname())
     ip = socket.gethostbyname(socket.gethostname())
     port = 5000
-    getters = {}
-    setters = {}
+    attrs = {} 
     event_listeners = []
     event_recipients = {}
     remote = False
@@ -22,20 +21,20 @@ class HarmonyDevice:
 
     def summary(self):
 
-        getters = self.add_getters
-        setters = self.setters
-
+        attrs = self.attrs
         if self.remote:
-            getters = self.list_getters()
-            setters = self.list_setters()
+            attrs = self.list_attrs()
 
         summary = """
         Device ID: {}
         IP Address: {}
         Harmony Server Port: {}
-        Getters: {}
-        Setters: {}
-        """.format(self.id, self.ip, self.port, getters, setters)
+        Attributes ({} total):
+        """.format(self.id, self.ip, self.port, len(attrs))
+        for key, attr in attrs.items():
+            summary += "\nName: {}\n".format(attr.name)
+            if len(attr.description) > 0:
+                summary += "Description: {}\n".format(attr.description)
 
         print(summary)
 
@@ -45,19 +44,26 @@ class HarmonyDevice:
         if params:
             url += "?"
             for key, value in params.items():
-                url += key + "=" + json.dumps(value) + "&"
+                url += key + "=" + str(value) + "&"
         url = url[:-1]
-
+        print(url)
         req = requests.get(url)
         return req.json()
 
-    def list_getters(self):
-        req = self.make_request("getters")
-        return req["getters"]
+    def list_attributes(self):
+        attrs = self.attrs
+        if self.remote:
+            attrs = self.make_request("attributes")["attrs"]
+        return attrs
 
-    def list_setters(self):
-        req = self.make_request("setters")
-        return req["setters"]
+    def add_attribute(self, attribute):
+        attr_instance = attribute()
+        self.attrs[attr_instance.name] = attr_instance
+
+    def add_attributes(self, attributes):
+        for attribute in attributes:
+            self.add_attribute(attribute)
+
 
 
     def get(self, attribute, params=None):
@@ -67,7 +73,7 @@ class HarmonyDevice:
             params["attribute"] = attribute
             return self.make_request("get", params=params)
         else:
-            return self.getters[attribute](params)
+            return self.attrs[attribute].getter(params)
 
     def set(self, attribute, value, params=None):
         if self.remote:
@@ -77,33 +83,8 @@ class HarmonyDevice:
             params["value"] = value
             return self.make_request("set", params=params)
         else:
-            self.setters[attribute](value, params)
+            self.attrs[attribute].setter(value, params)
 
-    def add_getters(self, getters):
-        if self.remote:
-            raise Exception("Not allowed to add getters to remote device")
-        for getter in getters:
-            if "attribute" in getter and "callback" in getter:
-                self.getters[ getter["attribute"] ] = getter["callback"]
-            elif "attribute" in getter and "callback" not in getter:
-                raise ValueError("Getter '{}' has no callback'".format(getter["attribute"]))
-            elif "callback" in getter and "attribute" not in getter:
-                raise ValueError("Can't add getter with no attribute")
-            else:
-                raise ValueError("Getters must be a dict with attribute and callback")
-
-    def add_setters(self, setters):
-        if self.remote:
-            raise Exception("Not allowed to add setters to remote device")
-        for setter in setters:
-            if "attribute" in setter and "callback" in setter:
-                self.setters[ setter["attribute"] ] = setter["callback"]
-            elif "attribute" in setter and "callback" not in setter:
-                raise ValueError("Setter '{}' has no callback'".format(setter["attribute"]))
-            elif "callback" in setter and "attribute" not in setter:
-                raise ValueError("Can't add setter with no attribute")
-            else:
-                raise ValueError("Setters must be a dict with attribute and callback")
     #Listens to an event from another device
     def add_listener(self, harmony_device, event, callback):
         if self.remote:
