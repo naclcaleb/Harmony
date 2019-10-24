@@ -6,14 +6,14 @@ from .HarmonyClientRequestHandler import createHarmonyClientRequestHandler
 
 class HarmonyDevice:
     id = socket.gethostbyname(socket.gethostname())
-    ip = socket.gethostbyname(socket.gethostname())
+    ip = '0.0.0.0' #socket.gethostbyname(socket.gethostname())
     port = 5000
     attrs = {} 
     event_listeners = []
     event_recipients = {}
     remote = False
 
-    def __init__(self, remote=False, id=socket.gethostbyname(socket.gethostname()), ip=socket.gethostbyname(socket.gethostname()), port=5000):
+    def __init__(self, remote=False, id=socket.gethostbyname(socket.gethostname()), ip='0.0.0.0', port=5000):
         self.remote = remote
         self.id = id
         self.ip = ip
@@ -26,15 +26,14 @@ class HarmonyDevice:
             attrs = self.list_attrs()
 
         summary = """
-        Device ID: {}
-        IP Address: {}
-        Harmony Server Port: {}
-        Attributes ({} total):
-        """.format(self.id, self.ip, self.port, len(attrs))
+Device ID: {}
+IP Address: {}
+Harmony Server Port: {}
+Attributes ({} total):""".format(self.id, self.ip, self.port, len(attrs))
         for key, attr in attrs.items():
-            summary += "\nName: {}\n".format(attr.name)
+            summary += "\n\t- Name: {}\n".format(attr.name)
             if len(attr.description) > 0:
-                summary += "Description: {}\n".format(attr.description)
+                summary += "\t  Description: {}\n".format(attr.description)
 
         print(summary)
 

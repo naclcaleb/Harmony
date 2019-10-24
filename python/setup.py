@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="harmony-device",
-    version="0.0.6",
+    version="0.0.7",
     author="Caleb Hester",
     author_email="naclcaleb@gmail.com",
     description="Harmony - A standard protocol for controlling IoT devices",
