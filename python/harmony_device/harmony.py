@@ -133,8 +133,8 @@ class HarmonyDevice:
         self.port = port
         harmonyClientRequestHandler = createHarmonyClientRequestHandler(self)
 
-        httpd = HTTPServer(('localhost', port), harmonyClientRequestHandler)
+        httpd = HTTPServer((self.ip, port), harmonyClientRequestHandler)
 
-        print("Starting Harmony Device Server at localhost:" + str(port) + "...")
+        print("Starting Harmony Device Server at " + str(self.ip) + ":" + str(port) + "...")
 
         httpd.serve_forever()
