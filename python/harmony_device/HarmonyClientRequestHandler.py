@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
 
-
+#TODO: Create endpoints for subscribing to notifications and emitting notifications
 def createHarmonyClientRequestHandler(harmony_device):
     class HarmonyClientRequestHandler(BaseHTTPRequestHandler):
 
@@ -24,7 +24,10 @@ def createHarmonyClientRequestHandler(harmony_device):
                 params[ components[0] ] = components[1]
             if path == "/get":
                 try:
-                    data = harmony_device.get(params["attribute"], params)
+                    if params['attribute'] in harmony_device.attrs and harmony_device.attrs[params['attribute']].getter != None:
+                        data = harmony_device.get(params["attribute"], params)
+                    else:
+                        data = { "error": "No getter exists for attribute '{}'".format(params['attribute']) } 
 
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -38,7 +41,10 @@ def createHarmonyClientRequestHandler(harmony_device):
                     return
             if path == "/set":
                 try:
-                    data = harmony_device.set(params["attribute"], params["value"], params)
+                    if params['attribute'] in harmony_device.attrs and harmony_device.attrs[params['attribute']].setter != None:
+                        data = harmony_device.set(params["attribute"], params["value"], params)
+                    else:
+                        data = { "error": "No setter exists for attribute '{}'".format(params['attribute']) } 
                     if not data:
                         data = "success"
                     self.send_response(200)
@@ -51,5 +57,20 @@ def createHarmonyClientRequestHandler(harmony_device):
                     self.send_response(500)
                     self.end_headers()
                     return
+            if path =="/notify":
+                try: 
+                    if 'event' not in params:
+                        self.wfile.write('{"error": "No event name given"}')
+                    else:
+                        harmony_device.recieveNotification(params['event'])
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                except Exception as err:
+                    print(err)
+                    self.send_response(500)
+                    self.end_headers()
+                    return
+                
             return
     return HarmonyClientRequestHandler

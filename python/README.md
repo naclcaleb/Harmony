@@ -56,6 +56,66 @@ class MsgAttr:
 device.run(port=5000)
 ```
 
+### Using Listeners
+Sometimes, you may want one device to run some code when a certain event occurs on another device. For example, you might have a system where a camera performs facial recognition on people at the front door, and when it determines whether they are allowed in, it unlocks the door.
+
+In harmony, this can be accomplished using *Listeners*. Listeners allow one device to "listen" for when another device emits a certain event. The other device doesn't need to know anything about the listening device, it just tells that device when an event occurs.
+
+Here's an example of how you might add a listener:
+
+On the first device:
+```
+from harmony_device import HarmonyDevice, Listener, Attribute
+
+device = HarmonyDevice(id='listener')
+other_device = HarmonyDevice(id='emitter', port=5001)
+
+class MessageChangedListener(Listener):
+    event = "message_changed"
+    device = other_device
+    
+    def callback(self, data):
+        print("The message on the other device was changed to: '{}''".format(data['message']))
+
+
+device.add_listener(MessageChangedListener)
+
+device.run(port=5000) 
+
+```
+
+On the second device:
+```
+from harmony_device import HarmonyDevice, Attribute
+
+device = HarmonyDevice(port=5001)
+
+class MsgAttr(Attribute):
+    name = 'message'
+    msg = 'Hello, World!'    
+
+    def getter(self, params):
+        return self.msg
+    def setter(self, value, params):
+        self.msg = value
+        
+        #Now we emit the 'message_changed' event
+        device.emit('message_changed')
+
+
+```
+
+
+*Note that the second device has to be running in order for the first device to listen to it. This means your devices may have to be started up in a certain order.*
+
+
+You also might wonder whether you can emit an event from some other file running a different piece of code. You certainly can! You just have to import your `device` variable into that file using Python's singleton pattern, and then you can emit the events from that file.
+
+This really only works if the harmony server is written in the same language as the one you are wanting to emit events from. Unfortunately, we only support Python as of right now, though I plan to add C++, Java, and JavaScript versions at some point as well.
+
+
+## Disclaimer
+
 This system is not meant to magically work with every IoT device. It's an abstraction layer that allows us to write code that can *potentially* work with many IoT devices - so long as they have their getters and setters defined correctly.
 
 

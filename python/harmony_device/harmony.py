@@ -85,13 +85,18 @@ Attributes ({} total):""".format(self.id, self.ip, self.port, len(attrs))
             self.attrs[attribute].setter(value, params)
 
     #Listens to an event from another device
-    def add_listener(self, harmony_device, event, callback):
+    def add_listener(self, listener):
         if self.remote:
             raise Exception("Not allowed to add listener to remote device")
-        if isinstance(harmony_device, HarmonyDevice):
-            self.event_listeners.append({ "device": harmony_device, "name": event, "callback": callback })
-        else:
-            raise ValueError("Listeners must be instances of HarmonyDevice")
+        try:
+            listener.device.add_recipient(self, listener.event)
+            self.event_listeners.append(listener())
+        except:
+            raise Exception("An error occurred when adding a listener. Make sure you have a valid listener class.")
+
+    def add_listeners(self, listeners):
+        for listener in listeners:
+            self.add_listener(listener)
 
     #Adds a device to recieve a specific event
     def add_recipient(self, harmony_device, event):
@@ -101,11 +106,12 @@ Attributes ({} total):""".format(self.id, self.ip, self.port, len(attrs))
 
             self.event_recipients[event].append(harmony_device)
 
-            self.make_request("recipients/add", {
-                "id": harmony_device.id,
-                "ip": harmony_device.ip,
-                "event": event
-            })
+            if self.remote:
+                self.make_request("recipients/add", {
+                    "id": self.id,
+                    "ip": self.ip,
+                    "event": event
+                })
         else:
             raise ValueError("Recipients must be instances of HarmonyDevice")
 
@@ -115,7 +121,7 @@ Attributes ({} total):""".format(self.id, self.ip, self.port, len(attrs))
         for recipient in self.event_recipients[ event["name"] ]:
             recipient.recieveNotification(event)
 
-    def recieveNotification(self, event):
+    def recieveNotification(self, event, data):
         if self.remote:
             self.make_request("notify", {
                 "event": event["name"],
@@ -123,8 +129,8 @@ Attributes ({} total):""".format(self.id, self.ip, self.port, len(attrs))
             })
         else:
             for listener in self.event_listeners:
-                if listener["name"] == event["name"] and listener["device"] == event["device"]:
-                    listener["callback"]()
+                if listener.event == event["name"] and listener.device == event["device"]:
+                    listener.callback(data)
 
     def run(self, port=5000):
         if self.remote:
